@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#1f4e8c"/>
+  <!-- 寫字板：放在中央安全區內，maskable 裁切也不會被切掉 -->
+  <rect x="146" y="120" width="220" height="280" rx="22" fill="#ffffff"/>
+  <rect x="206" y="98" width="100" height="48" rx="14" fill="#cfdcef"/>
+  <rect x="186" y="188" width="140" height="18" rx="9" fill="#1f4e8c"/>
+  <rect x="186" y="236" width="140" height="18" rx="9" fill="#1f4e8c"/>
+  <rect x="186" y="284" width="90" height="18" rx="9" fill="#1f4e8c"/>
+  <circle cx="318" cy="342" r="44" fill="#f2a516"/>
+  <path d="M298 342 l14 14 l26 -28" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

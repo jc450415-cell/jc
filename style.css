@@ -141,6 +141,23 @@ button.secondary {
 
 .muted { color: var(--muted); margin: 0; }
 
+.install-btn { margin-top: 12px; }
+.offline-banner {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--err-bg);
+  color: var(--err-text);
+}
+
+/* 安裝成 App 後，避開瀏海與底部手勢區 */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 .list-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .list-head h2 { margin: 0; }
 

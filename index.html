@@ -5,12 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#1f4e8c">
   <title>報修登記</title>
+  <meta name="description" content="提交報修，並查看最近登記的問題。">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="報修登記">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="site-header">
     <h1>報修登記</h1>
     <p>填寫下方表單送出報修，清單會顯示最近 20 筆。</p>
+    <button id="install-btn" type="button" class="secondary install-btn" hidden>安裝到主畫面</button>
+    <p id="offline-banner" class="offline-banner" role="status" hidden>目前離線：可以瀏覽頁面，但無法送出報修或更新清單。</p>
   </header>
 
   <main>
