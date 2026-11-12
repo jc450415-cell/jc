@@ -10,6 +10,44 @@
   var list = document.getElementById("repair-list");
   var listMessage = document.getElementById("list-message");
   var refreshBtn = document.getElementById("refresh-btn");
+  var installBtn = document.getElementById("install-btn");
+  var offlineBanner = document.getElementById("offline-banner");
+
+  // ---- PWA：註冊 Service Worker、安裝按鈕、離線提示 ----
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (err) {
+        console.warn("Service Worker 註冊失敗", err);
+      });
+    });
+  }
+
+  var installPrompt = null;
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    installPrompt = e;
+    installBtn.hidden = false;
+  });
+  installBtn.addEventListener("click", async function () {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    installBtn.hidden = true;
+  });
+  window.addEventListener("appinstalled", function () {
+    installBtn.hidden = true;
+  });
+
+  function updateOnline() {
+    offlineBanner.hidden = navigator.onLine;
+  }
+  window.addEventListener("online", function () {
+    updateOnline();
+    if (typeof loadList === "function" && window.supabase) loadList();
+  });
+  window.addEventListener("offline", updateOnline);
+  updateOnline();
 
   var cfg = window.APP_CONFIG || {};
   if (!window.supabase || !cfg.supabaseUrl || !cfg.supabaseKey) {
@@ -113,6 +151,10 @@
     var problem = validate(row);
     if (problem) {
       showFormMessage(problem, "error");
+      return;
+    }
+    if (!navigator.onLine) {
+      showFormMessage("目前離線，無法送出。請連上網路後再試，已填寫的內容會保留。", "error");
       return;
     }
 
