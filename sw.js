@@ -1,15 +1,16 @@
 // 老屋改造 Service Worker
-// 修改任何網頁檔案後，請把 VERSION 加 1，使用者下次開啟時才會換成新版。
-const VERSION = "v3";
+// 修改任何網頁檔案後，請把 VERSION 加 1，並把 index.html 裡 style.css／config.js／app.js 的 ?v= 改成同一個數字，
+// 這樣瀏覽器和 GitHub Pages 的暫存都不會讓使用者拿到舊檔。
+const VERSION = "v4";
 const CACHE = "renovation-app-" + VERSION;
 
 // 網頁本身的檔案（相對路徑，適用 GitHub Pages 的 /jc/ 子路徑）
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css",
-  "./app.js",
-  "./config.js",
+  "./style.css?" + VERSION.replace("v", "v="),
+  "./app.js?" + VERSION.replace("v", "v="),
+  "./config.js?" + VERSION.replace("v", "v="),
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-192.png",
@@ -23,7 +24,8 @@ const CDN_PREFIX = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/";
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await cache.addAll(APP_SHELL);
+    // cache: "reload"：安裝時一律向伺服器拿最新檔，不用瀏覽器暫存
+    await cache.addAll(APP_SHELL.map((u) => new Request(u, { cache: "reload" })));
     // 程式庫另外快取；失敗不影響安裝，第一次使用時會再補進快取
     try {
       await cache.add(CDN_PREFIX + "dist/umd/supabase.js");
@@ -74,7 +76,11 @@ async function cacheFirst(req) {
 async function networkFirst(req) {
   const cache = await caches.open(CACHE);
   try {
-    const res = await fetch(req);
+    // no-cache：每次都向伺服器確認是否有新版，避免拿到瀏覽器暫存的舊檔
+    const fresh = req.mode === "navigate"
+      ? new Request(req.url, { cache: "no-cache", credentials: "same-origin" })
+      : new Request(req, { cache: "no-cache" });
+    const res = await fetch(fresh);
     if (res.ok) cache.put(req, res.clone());
     return res;
   } catch (err) {
