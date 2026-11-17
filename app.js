@@ -1,17 +1,29 @@
 (function () {
   "use strict";
 
-  var TABLE = "repair_requests";
-  var LIST_LIMIT = 20;
+  var TABLE = "renovation_items";
+  var LIST_LIMIT = 50;
+  var SUMMARY_LIMIT = 1000;
+  var SPACES = ["客廳", "餐廳", "廚房", "浴室", "臥室", "陽台", "樓梯", "屋頂", "外牆", "全室", "其他"];
+  var TRADES = ["拆除", "水電", "泥作", "防水", "木作", "油漆", "門窗", "鐵件", "系統櫃", "其他"];
+  var PRIORITIES = ["低", "中", "高"];
+  var MAX_BUDGET = 100000000;
 
-  var form = document.getElementById("repair-form");
+  var form = document.getElementById("item-form");
   var submitBtn = document.getElementById("submit-btn");
   var formMessage = document.getElementById("form-message");
-  var list = document.getElementById("repair-list");
+  var list = document.getElementById("item-list");
   var listMessage = document.getElementById("list-message");
   var refreshBtn = document.getElementById("refresh-btn");
   var installBtn = document.getElementById("install-btn");
   var offlineBanner = document.getElementById("offline-banner");
+  var sumEls = {
+    budget: document.getElementById("sum-budget"),
+    count: document.getElementById("sum-count"),
+    "規劃中": document.getElementById("sum-planned"),
+    "施工中": document.getElementById("sum-doing"),
+    "已完成": document.getElementById("sum-done"),
+  };
 
   // ---- PWA：註冊 Service Worker、安裝按鈕、離線提示 ----
   if ("serviceWorker" in navigator) {
@@ -44,7 +56,7 @@
   }
   window.addEventListener("online", function () {
     updateOnline();
-    if (typeof loadList === "function" && window.supabase) loadList();
+    if (typeof loadAll === "function" && window.supabase) loadAll();
   });
   window.addEventListener("offline", updateOnline);
   updateOnline();
@@ -75,6 +87,10 @@
       " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
   }
 
+  function formatMoney(n) {
+    return "NT$ " + Number(n || 0).toLocaleString("zh-TW");
+  }
+
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
@@ -85,40 +101,72 @@
   function renderList(rows) {
     list.replaceChildren();
     if (!rows.length) {
-      listMessage.textContent = "目前還沒有報修。";
+      listMessage.textContent = "目前還沒有工項，從上方表單新增第一筆吧。";
       listMessage.hidden = false;
       return;
     }
     listMessage.hidden = true;
     rows.forEach(function (r) {
       var li = el("li");
-      var top = el("div", "item-top");
-      top.appendChild(el("span", "tag", r.category));
-      top.appendChild(el("span", "tag urgency-" + r.urgency, "緊急：" + r.urgency));
-      top.appendChild(el("span", "tag", r.status));
-      li.appendChild(top);
-      li.appendChild(el("p", "item-desc", r.description));
-      li.appendChild(el("div", "item-meta",
-        r.reporter_name + "｜" + r.location + "｜" + formatTime(r.created_at)));
+      var head = el("div", "item-head");
+      head.appendChild(el("strong", "item-title", r.title));
+      head.appendChild(el("span", "item-budget", formatMoney(r.budget)));
+      li.appendChild(head);
+
+      var tags = el("div", "item-top");
+      tags.appendChild(el("span", "tag", r.space));
+      tags.appendChild(el("span", "tag", r.trade));
+      tags.appendChild(el("span", "tag priority-" + r.priority, "優先：" + r.priority));
+      tags.appendChild(el("span", "tag status-" + r.status, r.status));
+      li.appendChild(tags);
+
+      if (r.note) li.appendChild(el("p", "item-desc", r.note));
+      var meta = [r.recorder_name];
+      if (r.contractor) meta.push("廠商：" + r.contractor);
+      meta.push(formatTime(r.created_at));
+      li.appendChild(el("div", "item-meta", meta.join("｜")));
       list.appendChild(li);
     });
   }
 
+  function renderSummary(rows) {
+    var total = 0;
+    var counts = { "規劃中": 0, "施工中": 0, "已完成": 0 };
+    rows.forEach(function (r) {
+      total += Number(r.budget) || 0;
+      if (counts[r.status] != null) counts[r.status] += 1;
+    });
+    sumEls.budget.textContent = formatMoney(total);
+    sumEls.count.textContent = String(rows.length);
+    Object.keys(counts).forEach(function (k) { sumEls[k].textContent = String(counts[k]); });
+  }
+
   async function loadList() {
+    var res = await client
+      .from(TABLE)
+      .select("id, created_at, recorder_name, space, trade, title, note, budget, contractor, priority, status")
+      .order("created_at", { ascending: false })
+      .limit(LIST_LIMIT);
+    if (res.error) throw res.error;
+    renderList(res.data || []);
+  }
+
+  async function loadSummary() {
+    var res = await client.from(TABLE).select("budget, status").limit(SUMMARY_LIMIT);
+    if (res.error) throw res.error;
+    renderSummary(res.data || []);
+  }
+
+  async function loadAll() {
     refreshBtn.disabled = true;
     listMessage.hidden = false;
     listMessage.textContent = "載入中…";
     try {
-      var res = await client
-        .from(TABLE)
-        .select("id, created_at, reporter_name, location, category, description, urgency, status")
-        .order("created_at", { ascending: false })
-        .limit(LIST_LIMIT);
-      if (res.error) throw res.error;
-      renderList(res.data || []);
+      await Promise.all([loadList(), loadSummary()]);
     } catch (err) {
       console.error(err);
       list.replaceChildren();
+      listMessage.hidden = false;
       listMessage.textContent = "清單載入失敗：" + (err.message || "請稍後再試");
     } finally {
       refreshBtn.disabled = false;
@@ -127,21 +175,28 @@
 
   function readForm() {
     var fd = new FormData(form);
+    // 預算允許輸入「85,000」這類有逗號或空白的寫法
+    var budgetText = String(fd.get("budget") || "").replace(/[,，\s]/g, "");
     return {
-      reporter_name: String(fd.get("reporter_name") || "").trim(),
-      location: String(fd.get("location") || "").trim(),
-      category: String(fd.get("category") || ""),
-      description: String(fd.get("description") || "").trim(),
-      urgency: String(fd.get("urgency") || "中"),
+      recorder_name: String(fd.get("recorder_name") || "").trim(),
+      space: String(fd.get("space") || ""),
+      trade: String(fd.get("trade") || ""),
+      title: String(fd.get("title") || "").trim(),
+      note: String(fd.get("note") || "").trim(),
+      budget: /^\d+$/.test(budgetText) ? Number(budgetText) : NaN,
+      contractor: String(fd.get("contractor") || "").trim(),
+      priority: String(fd.get("priority") || "中"),
     };
   }
 
   function validate(row) {
-    if (!row.reporter_name) return "請填寫報修人。";
-    if (!row.location) return "請填寫地點或部門。";
-    if (["設備", "網路", "環境", "其他"].indexOf(row.category) < 0) return "請選擇類別。";
-    if (!row.description) return "請填寫問題說明。";
-    if (["低", "中", "高"].indexOf(row.urgency) < 0) return "請選擇緊急程度。";
+    if (!row.title) return "請填寫工項名稱。";
+    if (SPACES.indexOf(row.space) < 0) return "請選擇空間。";
+    if (TRADES.indexOf(row.trade) < 0) return "請選擇工種。";
+    if (!Number.isInteger(row.budget) || row.budget < 0 || row.budget > MAX_BUDGET)
+      return "預算請填 0 到 100,000,000 之間的整數。";
+    if (PRIORITIES.indexOf(row.priority) < 0) return "請選擇優先程度。";
+    if (!row.recorder_name) return "請填寫登記人。";
     return null;
   }
 
@@ -154,28 +209,30 @@
       return;
     }
     if (!navigator.onLine) {
-      showFormMessage("目前離線，無法送出。請連上網路後再試，已填寫的內容會保留。", "error");
+      showFormMessage("目前離線，無法新增。請連上網路後再試，已填寫的內容會保留。", "error");
       return;
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = "送出中…";
+    submitBtn.textContent = "新增中…";
     try {
-      // 只送這 5 個欄位；id、created_at、status 由資料庫預設值產生
+      // 只送這 8 個欄位；id、created_at、status 由資料庫預設值產生
       var res = await client.from(TABLE).insert(row);
       if (res.error) throw res.error;
-      showFormMessage("已送出報修，謝謝！", "ok");
+      showFormMessage("已新增工項「" + row.title + "」。", "ok");
+      var keepName = row.recorder_name;
       form.reset();
-      await loadList();
+      form.elements.recorder_name.value = keepName; // 連續登記時不用重打名字
+      await loadAll();
     } catch (err) {
       console.error(err);
-      showFormMessage("送出失敗：" + (err.message || "請稍後再試"), "error");
+      showFormMessage("新增失敗：" + (err.message || "請稍後再試"), "error");
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = "送出報修";
+      submitBtn.textContent = "新增工項";
     }
   });
 
-  refreshBtn.addEventListener("click", loadList);
-  loadList();
+  refreshBtn.addEventListener("click", loadAll);
+  loadAll();
 })();

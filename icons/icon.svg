@@ -1,11 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#1f4e8c"/>
-  <!-- 寫字板：放在中央安全區內，maskable 裁切也不會被切掉 -->
-  <rect x="146" y="120" width="220" height="280" rx="22" fill="#ffffff"/>
-  <rect x="206" y="98" width="100" height="48" rx="14" fill="#cfdcef"/>
-  <rect x="186" y="188" width="140" height="18" rx="9" fill="#1f4e8c"/>
-  <rect x="186" y="236" width="140" height="18" rx="9" fill="#1f4e8c"/>
-  <rect x="186" y="284" width="90" height="18" rx="9" fill="#1f4e8c"/>
-  <circle cx="318" cy="342" r="44" fill="#f2a516"/>
-  <path d="M298 342 l14 14 l26 -28" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="512" height="512" fill="#7a4a24"/>
+  <!-- 老屋：放在中央安全區內，maskable 裁切也不會被切掉 -->
+  <path d="M256 118 L388 226 L388 392 L124 392 L124 226 Z" fill="#f6efe4"/>
+  <path d="M100 238 L256 110 L412 238" fill="none" stroke="#e9b26a" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="226" y="296" width="60" height="96" rx="6" fill="#7a4a24"/>
+  <rect x="160" y="252" width="44" height="44" rx="6" fill="#c9b49a"/>
+  <rect x="308" y="252" width="44" height="44" rx="6" fill="#c9b49a"/>
+  <!-- 槌子：代表改造 -->
+  <g transform="rotate(-35 340 350)">
+    <rect x="332" y="312" width="16" height="96" rx="6" fill="#3b2412"/>
+    <rect x="304" y="292" width="72" height="34" rx="8" fill="#e9b26a"/>
+  </g>
 </svg>

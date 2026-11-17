@@ -3,78 +3,127 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#1f4e8c">
-  <title>報修登記</title>
-  <meta name="description" content="提交報修，並查看最近登記的問題。">
+  <meta name="theme-color" content="#7a4a24">
+  <title>老屋改造</title>
+  <meta name="description" content="登記老屋改造工項，追蹤預算與施工狀態。">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="報修登記">
+  <meta name="apple-mobile-web-app-title" content="老屋改造">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="site-header">
-    <h1>報修登記</h1>
-    <p>填寫下方表單送出報修，清單會顯示最近 20 筆。</p>
+    <h1>老屋改造</h1>
+    <p>逐項登記要做的工程，隨時掌握預算與施工狀態。</p>
     <button id="install-btn" type="button" class="secondary install-btn" hidden>安裝到主畫面</button>
-    <p id="offline-banner" class="offline-banner" role="status" hidden>目前離線：可以瀏覽頁面，但無法送出報修或更新清單。</p>
+    <p id="offline-banner" class="offline-banner" role="status" hidden>目前離線：可以瀏覽頁面，但無法新增工項或更新清單。</p>
   </header>
 
   <main>
+    <section class="card" aria-labelledby="summary-title">
+      <h2 id="summary-title">預算總覽</h2>
+      <div class="stats">
+        <div class="stat stat-wide">
+          <span class="stat-label">預算合計</span>
+          <span id="sum-budget" class="stat-value">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">工項數</span>
+          <span id="sum-count" class="stat-value">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">規劃中</span>
+          <span id="sum-planned" class="stat-value">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">施工中</span>
+          <span id="sum-doing" class="stat-value">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">已完成</span>
+          <span id="sum-done" class="stat-value">—</span>
+        </div>
+      </div>
+    </section>
+
     <section class="card" aria-labelledby="form-title">
-      <h2 id="form-title">新增報修</h2>
-      <form id="repair-form" novalidate>
+      <h2 id="form-title">新增工項</h2>
+      <form id="item-form" novalidate>
         <div class="field">
-          <label for="reporter_name">報修人</label>
-          <input id="reporter_name" name="reporter_name" type="text" maxlength="50" autocomplete="name" required>
+          <label for="title">工項名稱</label>
+          <input id="title" name="title" type="text" maxlength="100" placeholder="例：浴室全室防水重做" required>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="space">空間</label>
+            <select id="space" name="space" required>
+              <option value="" disabled selected>請選擇</option>
+              <option>客廳</option><option>餐廳</option><option>廚房</option>
+              <option>浴室</option><option>臥室</option><option>陽台</option>
+              <option>樓梯</option><option>屋頂</option><option>外牆</option>
+              <option>全室</option><option>其他</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="trade">工種</label>
+            <select id="trade" name="trade" required>
+              <option value="" disabled selected>請選擇</option>
+              <option>拆除</option><option>水電</option><option>泥作</option>
+              <option>防水</option><option>木作</option><option>油漆</option>
+              <option>門窗</option><option>鐵件</option><option>系統櫃</option>
+              <option>其他</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="budget">預算（元）</label>
+            <input id="budget" name="budget" type="text" inputmode="numeric" maxlength="12" placeholder="例：85000" required>
+          </div>
+          <div class="field">
+            <label for="contractor">廠商（選填）</label>
+            <input id="contractor" name="contractor" type="text" maxlength="100">
+          </div>
         </div>
 
         <div class="field">
-          <label for="location">地點或部門</label>
-          <input id="location" name="location" type="text" maxlength="100" required>
-        </div>
-
-        <div class="field">
-          <label for="category">類別</label>
-          <select id="category" name="category" required>
-            <option value="" disabled selected>請選擇</option>
-            <option value="設備">設備</option>
-            <option value="網路">網路</option>
-            <option value="環境">環境</option>
-            <option value="其他">其他</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="description">問題說明</label>
-          <textarea id="description" name="description" rows="4" maxlength="1000" required></textarea>
+          <label for="note">說明（選填）</label>
+          <textarea id="note" name="note" rows="3" maxlength="1000" placeholder="現況、做法、注意事項"></textarea>
         </div>
 
         <fieldset class="field">
-          <legend>緊急程度</legend>
+          <legend>優先程度</legend>
           <div class="segmented">
-            <label><input type="radio" name="urgency" value="低"><span>低</span></label>
-            <label><input type="radio" name="urgency" value="中" checked><span>中</span></label>
-            <label><input type="radio" name="urgency" value="高"><span>高</span></label>
+            <label><input type="radio" name="priority" value="低"><span>低</span></label>
+            <label><input type="radio" name="priority" value="中" checked><span>中</span></label>
+            <label><input type="radio" name="priority" value="高"><span>高</span></label>
           </div>
         </fieldset>
 
-        <button id="submit-btn" type="submit">送出報修</button>
+        <div class="field">
+          <label for="recorder_name">登記人</label>
+          <input id="recorder_name" name="recorder_name" type="text" maxlength="50" autocomplete="name" required>
+        </div>
+
+        <button id="submit-btn" type="submit">新增工項</button>
         <p id="form-message" class="message" role="status" aria-live="polite" hidden></p>
       </form>
     </section>
 
     <section class="card" aria-labelledby="list-title">
       <div class="list-head">
-        <h2 id="list-title">最近報修</h2>
+        <h2 id="list-title">工項清單</h2>
         <button id="refresh-btn" type="button" class="secondary">重新整理</button>
       </div>
       <p id="list-message" class="muted" aria-live="polite">載入中…</p>
-      <ul id="repair-list" class="repair-list"></ul>
+      <ul id="item-list" class="item-list"></ul>
     </section>
   </main>
 
