@@ -1,7 +1,7 @@
-// 報修登記 Service Worker
+// 老屋改造 Service Worker
 // 修改任何網頁檔案後，請把 VERSION 加 1，使用者下次開啟時才會換成新版。
-const VERSION = "v1";
-const CACHE = "repair-app-" + VERSION;
+const VERSION = "v2";
+const CACHE = "renovation-app-" + VERSION;
 
 // 網頁本身的檔案（相對路徑，適用 GitHub Pages 的 /jc/ 子路徑）
 const APP_SHELL = [
@@ -37,7 +37,8 @@ self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(keys
-      .filter((k) => k.startsWith("repair-app-") && k !== CACHE)
+      // 也清掉改版前「報修登記」留下的快取
+      .filter((k) => (k.startsWith("renovation-app-") || k.startsWith("repair-app-")) && k !== CACHE)
       .map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
@@ -45,7 +46,7 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-  if (req.method !== "GET") return; // 送出報修（POST）一律直接走網路
+  if (req.method !== "GET") return; // 新增工項（POST）一律直接走網路
 
   const url = new URL(req.url);
 
