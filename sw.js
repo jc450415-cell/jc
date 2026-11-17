@@ -1,6 +1,6 @@
 // 老屋改造 Service Worker
 // 修改任何網頁檔案後，請把 VERSION 加 1，使用者下次開啟時才會換成新版。
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = "renovation-app-" + VERSION;
 
 // 網頁本身的檔案（相對路徑，適用 GitHub Pages 的 /jc/ 子路徑）

@@ -98,6 +98,13 @@
           <textarea id="note" name="note" rows="3" maxlength="1000" placeholder="現況、做法、注意事項"></textarea>
         </div>
 
+        <div class="field">
+          <span class="field-label" id="photos-label">照片（選填，最多 6 張）</span>
+          <label class="photo-pick secondary" for="photos">選擇照片</label>
+          <input id="photos" name="photos" type="file" accept="image/*" multiple class="visually-hidden" aria-labelledby="photos-label">
+          <div id="photo-preview" class="thumbs" aria-live="polite"></div>
+        </div>
+
         <fieldset class="field">
           <legend>優先程度</legend>
           <div class="segmented">
@@ -124,6 +131,7 @@
       </div>
       <p id="list-message" class="muted" aria-live="polite">載入中…</p>
       <ul id="item-list" class="item-list"></ul>
+      <input id="add-photo-input" type="file" accept="image/*" multiple class="visually-hidden" tabindex="-1" aria-hidden="true">
     </section>
   </main>
 
