@@ -108,7 +108,7 @@
     return node;
   }
 
-  function renderList(rows) {
+  function renderList(rows, photosOk) {
     list.replaceChildren();
     if (!rows.length) {
       listMessage.textContent = "目前還沒有工項，從上方表單新增第一筆吧。";
@@ -156,7 +156,7 @@
         });
         li.appendChild(thumbs);
       }
-      if (photos.length < MAX_PHOTOS) {
+      if (photosOk && photos.length < MAX_PHOTOS) {
         var addBtn = el("button", "secondary small add-photo-btn", "＋ 加照片");
         addBtn.type = "button";
         addBtn.addEventListener("click", function () {
@@ -185,12 +185,36 @@
   async function loadList() {
     var res = await client
       .from(TABLE)
-      .select("id, created_at, recorder_name, space, trade, title, note, budget, contractor, priority, status, " +
-        PHOTO_TABLE + "(path, created_at)")
+      .select("id, created_at, recorder_name, space, trade, title, note, budget, contractor, priority, status")
       .order("created_at", { ascending: false })
       .limit(LIST_LIMIT);
     if (res.error) throw res.error;
-    renderList(res.data || []);
+    var rows = res.data || [];
+
+    // 照片另外查：照片表有問題時，工項清單照樣顯示
+    var photoError = null;
+    if (rows.length) {
+      var pres = await client
+        .from(PHOTO_TABLE)
+        .select("item_id, path, created_at")
+        .in("item_id", rows.map(function (r) { return r.id; }));
+      if (pres.error) {
+        console.error(pres.error);
+        photoError = pres.error;
+      } else {
+        var byItem = {};
+        (pres.data || []).forEach(function (p) {
+          (byItem[p.item_id] = byItem[p.item_id] || []).push(p);
+        });
+        rows.forEach(function (r) { r.renovation_photos = byItem[r.id] || []; });
+      }
+    }
+    renderList(rows, !photoError);
+    if (photoError) {
+      listMessage.hidden = false;
+      listMessage.textContent = "照片暫時無法載入（" + (photoError.message || "請稍後再試") +
+        "）。請確認 Supabase 已執行 renovation_photos.sql。";
+    }
   }
 
   async function loadSummary() {

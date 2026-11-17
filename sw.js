@@ -1,7 +1,7 @@
 // 老屋改造 Service Worker
 // 修改任何網頁檔案後，請把 VERSION 加 1，並把 index.html 裡 style.css／config.js／app.js 的 ?v= 改成同一個數字，
 // 這樣瀏覽器和 GitHub Pages 的暫存都不會讓使用者拿到舊檔。
-const VERSION = "v4";
+const VERSION = "v5";
 const CACHE = "renovation-app-" + VERSION;
 
 // 網頁本身的檔案（相對路徑，適用 GitHub Pages 的 /jc/ 子路徑）
